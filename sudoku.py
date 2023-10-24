@@ -1,12 +1,14 @@
 import numpy as np
+import math
+import itertools
 
 class Sudoku:
-    def __init__(self, board = None):
+    def __init__(self, board = None, size=9):
         self.board = np.array([[0 for j in range(9)] for i in range(9)])
+        self.size = size
+        self.block_size = math.sqrt(size)
         if not board == None:
             self.load(board)
-
-                    
 
     def print(self):
         for y in range(9):
@@ -68,12 +70,27 @@ class Sudoku:
         return self.board[index]
 
     def get_block(self, x, y):
+        return self.board[y*3:(y+1)*3, x*3:(x+1)*3]
+
+    def get_block_list(self, x, y):
+        return list(itertools.chain.from_iterable(self.board[y*3:(y+1)*3, x*3:(x+1)*3]))
+    
+    def check_block(self, x, y):
         pass
+
+    def check_vert_line(self, index):
+        pass
+
+    def check_hor_line(self, index):
+        pass
+
+    def check(self):
+        # checks all
 
 
 f = open("Sudoku1.txt", "r")
 # print(f.read())
 
 s = Sudoku(f.read())
-# s.print()
-print(s.get_vert_line(3))
+s.print()
+print(s.get_block_list(1, 2))
