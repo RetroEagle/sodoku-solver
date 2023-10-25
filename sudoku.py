@@ -120,17 +120,26 @@ class Sudoku:
     
     def count_emtpy_cells(self):
         return sum([list(self.get_hor_line(i)).count(0) for i in range(self.size)])
+    
+    def export(self):
+        for line in self.board:
+            print("".join([str(n) for n in line]))
+            
+    def clone(self):
+        pass
+        # more efficient then exporting and importing via string...
 
 
+def load_multiple_from_file(file = "test_sudokus.txt"):
+    f = open(file)
+    sudokus = [Sudoku(i[4:]) for i in f.read().split("Grid")[1:]]
+    return sudokus
 
-# f = open("Sudoku5.txt", "r")
-# print(f.read())
-
-# s = Sudoku(f.read())
-# s.print()
-# print(s.count_emtpy_cells())
-
-f = open("test_sudokus.txt")
-sudokus = [Sudoku(i[4:]) for i in f.read().split("Grid")[1:]]
-for i in sudokus:
-    print(i.count_emtpy_cells())
+if __name__ == "__main__":
+    f = open("Sudoku5.txt", "r")
+    s = Sudoku(f.read())
+    s.print()
+    print(s.count_emtpy_cells())
+    # sudokus = load_multiple_from_file()
+    # for s in sudokus:
+    #     print(s.count_emtpy_cells())
