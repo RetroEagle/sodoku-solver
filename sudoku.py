@@ -10,6 +10,12 @@ class Sudoku:
         if not board == None:
             self.load(board)
 
+    def load(self, s):
+        lists = s.split()
+        for y in range(len(lists)):
+            for x in range(len(lists[y])):
+                self.board[y][x] = int(lists[y][x])
+
     def print(self):
         for y in range(9):
             if not y % 3 and y > 0:
@@ -54,14 +60,36 @@ class Sudoku:
                         print((f"{(self.board[y][x]):2d}") if self.board[y][x] > 1 else "  ", end="")   
                 print()
 
-    def enter(self, x, y, val):
+    def enter(self, x, y, val): # enters value without checkig if it is a valid move 
         self.board[y][x] = val
 
-    def load(self, s):
-        lists = s.split()
-        for y in range(len(lists)):
-            for x in range(len(lists[y])):
-                self.board[y][x] = int(lists[y][x])
+    def enter_attempt(self, x, y, val):
+        if self.is_valid_move(x, y, val):
+            print("Valid")
+            self.enter(x, y, val)
+        else:
+            print("Invalid!!!")
+            
+    def is_valid_move(self, x, y, val):
+        # first check if move is on board
+        if x >= self.size or y >= self.size:
+            return False
+        
+        # check if cell is already filled
+        if self.board[y][x] != 0:
+            return False
+
+        # check if value is already blocked in the two lines and block
+        if val in self.get_vert_line(x): 
+            return False
+        
+        if val in self.get_hor_line(y):
+            return False
+        
+        if val in self.get_block_list(x, y):
+            return False
+        
+        return True
 
     def get_vert_line(self, index):
         return self.board[:, index]
@@ -75,22 +103,34 @@ class Sudoku:
     def get_block_list(self, x, y):
         return list(itertools.chain.from_iterable(self.board[y*3:(y+1)*3, x*3:(x+1)*3]))
     
-    def check_block(self, x, y):
-        pass
+    # 3 methods for checking individual values
+    def check_block(self, x, y, val):
+        return not val in self.get_block_list(x, y)
 
-    def check_vert_line(self, index):
-        pass
+    def check_vert_line(self, index, val):
+        return not val in self.get_vert_line(index)
 
-    def check_hor_line(self, index):
-        pass
+    def check_hor_line(self, index, val):
+        return not val in self.get_hor_line(index)
 
+    # check if the whole sudoku is correct
     def check(self):
         # checks all
+        pass
+    
+    def count_emtpy_cells(self):
+        return sum([list(self.get_hor_line(i)).count(0) for i in range(self.size)])
 
 
-f = open("Sudoku1.txt", "r")
+
+# f = open("Sudoku5.txt", "r")
 # print(f.read())
 
-s = Sudoku(f.read())
-s.print()
-print(s.get_block_list(1, 2))
+# s = Sudoku(f.read())
+# s.print()
+# print(s.count_emtpy_cells())
+
+f = open("test_sudokus.txt")
+sudokus = [Sudoku(i[4:]) for i in f.read().split("Grid")[1:]]
+for i in sudokus:
+    print(i.count_emtpy_cells())
