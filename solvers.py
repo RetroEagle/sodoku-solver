@@ -69,8 +69,10 @@ class SimpleSolver:
                     # run guessed child
                     child_solver = SimpleSolver(child)
                     output = child_solver.run()
+
                     self.guesses += child_solver.guesses
                     self.cycles += child_solver.cycles
+                    
                     if output:
                         changed = True
                         self.sudoku.board = child.board
@@ -79,9 +81,9 @@ class SimpleSolver:
         return self.sudoku.is_filled()
                     
 if __name__ == "__main__":
-    f = open("Sudoku3.txt", "r")
-    # s = Sudoku(f.read())
-    s = Sudoku(size = 9)
+    f = open("Sudoku5.txt", "r")
+    s = Sudoku(f.read())
+    # s = Sudoku(size = 9)
     solver = SimpleSolver(s)
     output = solver.run()
     s.print()

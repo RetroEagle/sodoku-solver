@@ -100,6 +100,11 @@ class Sudoku:
                 if val == 0:
                     return False
         return True
+    
+    def is_correct(self):
+        # check if there are any immidiate contradictions in the Sudoku
+        # not really needed right now
+        pass
 
     def get_vert_line(self, index):
         return self.board[:, index]
@@ -115,7 +120,6 @@ class Sudoku:
         return list(itertools.chain.from_iterable(self.board[y * self.block_size : (y + 1) * self.block_size, 
                                                              x * self.block_size : (x + 1) * self.block_size]))
     
-    # 3 methods for checking individual values
     def check_block(self, x, y, val):
         return not val in self.get_block_list(x, y)
 
@@ -124,11 +128,6 @@ class Sudoku:
 
     def check_hor_line(self, index, val):
         return not val in self.get_hor_line(index)
-
-    # check if the whole sudoku is correct
-    def check(self):
-        # checks all
-        pass
     
     def count_emtpy_cells(self):
         return sum([list(self.get_hor_line(i)).count(0) for i in range(self.size)])
