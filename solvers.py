@@ -54,9 +54,11 @@ class SimpleSolver:
                     hits.append((n, fits))
                 
             if changed == False and len(hits) > 0:
+                # sort for the hit with the lowest amount of potential guesses
+                # the goal is to solve as much as possible without having to guess 
                 hits.sort(key=lambda x : len(x[1]))
-                # take a guess
 
+                # take a guess
                 for x, y in hits[0][1]:
                     self.guesses += 1
                     # create new child sudoku
@@ -79,12 +81,10 @@ class SimpleSolver:
 if __name__ == "__main__":
     f = open("Sudoku3.txt", "r")
     # s = Sudoku(f.read())
-    s = Sudoku(size = 16)
-    # s.print_raw()
-    # s.enter(1, 1, 9)
+    s = Sudoku(size = 9)
     solver = SimpleSolver(s)
     output = solver.run()
-    s.print_n()
+    s.print()
     print("solved:\t\t", output,
           "\nguesses made:\t", solver.guesses,
           "\ncomparisons:\t", solver.cycles)

@@ -17,28 +17,10 @@ class Sudoku:
             for x in range(len(lists[y])):
                 self.board[y][x] = int(lists[y][x])
         
-
     def print(self):
-        for y in range(9):
-            if not y % 3 and y > 0:
-                #  print("".join([chr(8213) * 2 if (x % 3 or x == 0)else "+" for x in range(9)]))
-                print(chr(8213) * 7 + "+" + chr(8213) * 7 + "+" + chr(8213) * 7)
-
-            for x in range(9):
-                if not x % 3 and x > 0:
-                    print(" " + chr(124), end="")
-                print((f"{(self.board[y][x]):2d}") if self.board[y][x] > 0 else "  ", end="")   
-            print()
-    
-    def print_n(self):
-        # f"{var:{x}d}"
         spacing = int(np.log10(self.size)) + 2
         for y in range(self.size):
             if not y % self.block_size and y > 0:
-                #  print("".join([chr(8213) * 2 if (x % 3 or x == 0)else "+" for x in range(9)]))
-                # print(chr(8213) * (spacing * self.block_size + 1) + "+" + 
-                #       chr(8213) * (spacing * self.block_size + 1) + "+" + 
-                #       chr(8213) * (spacing * self.block_size + 1))
                 for i in range(self.block_size - 1):
                     print(chr(8213) * (spacing * self.block_size + 1) + "+", end="")
                 print(chr(8213) * (spacing * self.block_size + 1))
@@ -57,11 +39,8 @@ class Sudoku:
     def print_marked(self, mx, my):
         for y in range(9):
             if not y % 3 and y > 0:
-                #  print("".join([chr(8213) * 2 if (x % 3 or x == 0)else "+" for x in range(9)]))
-
                 print(chr(8213) * 7 + "+" + chr(8213) * 7 + "+" + chr(8213) * 7)
                 
-
             if y == my:
                 for x in range(9):
                     if not x % 3 and x > 0:
@@ -71,7 +50,6 @@ class Sudoku:
                         print(" ", end=chr(9632))
                     else:
                         print((f"{(self.board[y][x]):2d}").replace(" ", chr(9632)) if self.board[y][x] > 0 else chr(9632) * 2, end="")   
-                    # print("..", end="")
                 print(chr(9632))
 
             else:
@@ -180,6 +158,3 @@ if __name__ == "__main__":
     s = Sudoku(f.read())
     s.print()
     print(s.count_emtpy_cells())
-    # sudokus = load_multiple_from_file()
-    # for s in sudokus:
-    #     print(s.count_emtpy_cells())
