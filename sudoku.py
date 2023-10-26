@@ -4,17 +4,19 @@ import itertools
 
 class Sudoku:
     def __init__(self, board = None, size=9):
-        self.board = np.array([[0 for j in range(9)] for i in range(9)])
+        self.board = np.array([[0 for j in range(size)] for i in range(size)])
         self.size = size
-        self.block_size = math.sqrt(size)
-        if not board == None:
+        self.block_size = int(math.sqrt(size))
+        if not (board == None):
             self.load(board)
 
     def load(self, s):
         lists = s.split()
+        self.size = len(lists)
         for y in range(len(lists)):
             for x in range(len(lists[y])):
                 self.board[y][x] = int(lists[y][x])
+        
 
     def print(self):
         for y in range(9):
@@ -26,9 +28,32 @@ class Sudoku:
                 if not x % 3 and x > 0:
                     print(" " + chr(124), end="")
                 print((f"{(self.board[y][x]):2d}") if self.board[y][x] > 0 else "  ", end="")   
-
             print()
     
+    def print_n(self):
+        # f"{var:{x}d}"
+        spacing = int(np.log10(self.size)) + 2
+        for y in range(self.size):
+            if not y % self.block_size and y > 0:
+                #  print("".join([chr(8213) * 2 if (x % 3 or x == 0)else "+" for x in range(9)]))
+                # print(chr(8213) * (spacing * self.block_size + 1) + "+" + 
+                #       chr(8213) * (spacing * self.block_size + 1) + "+" + 
+                #       chr(8213) * (spacing * self.block_size + 1))
+                for i in range(self.block_size - 1):
+                    print(chr(8213) * (spacing * self.block_size + 1) + "+", end="")
+                print(chr(8213) * (spacing * self.block_size + 1))
+                      
+            for x in range(self.size):
+                if not x % self.block_size and x > 0:
+                    print(" " + chr(124), end="")
+                print((f"{(self.board[y][x]):{spacing}d}")
+                      if self.board[y][x] > 0 else "  ", end="")
+            print()
+
+                              
+    def print_raw(self):
+        print(self.board)
+
     def print_marked(self, mx, my):
         for y in range(9):
             if not y % 3 and y > 0:
@@ -90,6 +115,13 @@ class Sudoku:
             return False
         
         return True
+    
+    def is_filled(self):
+        for row in self.board:
+            for val in row:
+                if val == 0:
+                    return False
+        return True
 
     def get_vert_line(self, index):
         return self.board[:, index]
@@ -98,10 +130,12 @@ class Sudoku:
         return self.board[index]
 
     def get_block(self, x, y):
-        return self.board[y*3:(y+1)*3, x*3:(x+1)*3]
+        return self.board[y * self.block_size : (y + 1) * self.block_size,
+                          x * self.block_size : (x + 1) * self.block_size]
 
     def get_block_list(self, x, y):
-        return list(itertools.chain.from_iterable(self.board[y*3:(y+1)*3, x*3:(x+1)*3]))
+        return list(itertools.chain.from_iterable(self.board[y * self.block_size : (y + 1) * self.block_size, 
+                                                             x * self.block_size : (x + 1) * self.block_size]))
     
     # 3 methods for checking individual values
     def check_block(self, x, y, val):
@@ -128,8 +162,12 @@ class Sudoku:
         return exp_str
         
     def clone(self):
-        pass
         # more efficient then exporting and importing via string...
+        new_sudoku = Sudoku(size=self.size)
+        for y in range(len(self.board)):
+            for x in range(len(self.board[0])):
+                new_sudoku.board[y][x] = self.board[y][x]
+        return new_sudoku
 
 
 def load_multiple_from_file(file = "test_sudokus.txt"):
