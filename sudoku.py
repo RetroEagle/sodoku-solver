@@ -122,9 +122,11 @@ class Sudoku:
         return sum([list(self.get_hor_line(i)).count(0) for i in range(self.size)])
     
     def export(self):
+        exp_str = ""
         for line in self.board:
-            print("".join([str(n) for n in line]))
-            
+            exp_str += "".join([str(n) for n in line]) + "\n"
+        return exp_str
+        
     def clone(self):
         pass
         # more efficient then exporting and importing via string...
