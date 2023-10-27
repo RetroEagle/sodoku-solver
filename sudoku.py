@@ -83,10 +83,10 @@ class Sudoku:
             return False
 
         # check if value is already blocked in the two lines and block
-        if val in self.get_vert_line(x): 
+        if val in self.get_col(x): 
             return False
         
-        if val in self.get_hor_line(y):
+        if val in self.get_row(y):
             return False
         
         if val in self.get_block_list(x, y):
@@ -106,10 +106,10 @@ class Sudoku:
         # not really needed right now
         pass
 
-    def get_vert_line(self, index):
+    def get_col(self, index):
         return self.board[:, index]
         
-    def get_hor_line(self, index):
+    def get_row(self, index):
         return self.board[index]
 
     def get_block(self, x, y):
@@ -123,14 +123,14 @@ class Sudoku:
     def check_block(self, x, y, val):
         return not val in self.get_block_list(x, y)
 
-    def check_vert_line(self, index, val):
-        return not val in self.get_vert_line(index)
+    def check_col(self, index, val):
+        return not val in self.get_col(index)
 
-    def check_hor_line(self, index, val):
-        return not val in self.get_hor_line(index)
+    def check_row(self, index, val):
+        return not val in self.get_row(index)
     
     def count_emtpy_cells(self):
-        return sum([list(self.get_hor_line(i)).count(0) for i in range(self.size)])
+        return sum([list(self.get_row(i)).count(0) for i in range(self.size)])
     
     def export(self):
         exp_str = ""
