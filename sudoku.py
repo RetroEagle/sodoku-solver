@@ -28,8 +28,7 @@ class Sudoku:
             for x in range(self.size):
                 if not x % self.block_size and x > 0:
                     print(" " + chr(124), end="")
-                print((f"{(self.board[y][x]):{spacing}d}")
-                      if self.board[y][x] > 0 else "  ", end="")
+                print((f"{(self.board[y][x]):{spacing}d}") if self.board[y][x] > 0 else " " * spacing, end="")
             print()
 
                               
