@@ -102,9 +102,12 @@ class Sudoku:
         return True
     
     def is_correct(self):
-        # check if there are any immidiate contradictions in the Sudoku
-        # not really needed right now
+        for row in range(self.size):
+            pass
         pass
+    
+    def get_value(self, x, y):
+        return self.board[y][x]
 
     def get_col(self, index):
         return self.board[:, index]

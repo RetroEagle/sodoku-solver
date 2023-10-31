@@ -239,14 +239,19 @@ class ArcConsistencySolver:
         for i in range(self.sudoku.size):
             if row_list[i] == 0:
                 empty_cells.append(i)
+        
         return empty_cells
     
     def get_possible_values(self, x, y):
+        val = self.sudoku.get_value(x, y)
+        
+        if val != 0:
+            return {val}
+        
         possible_values = []
         for val in range(1, self.sudoku.size + 1):
             if self.sudoku.is_valid_move(x, y, val):
                 possible_values.append(val)
-        print((x, y), possible_values)
         return set(possible_values)
     
     def get_connected_cells(self, x, y):
@@ -257,44 +262,32 @@ class ArcConsistencySolver:
         # col
         col = [(x, vy) for vy in range(self.sudoku.size) if vy != y]
         # block
-        block = [(vx, vy) for vx in range(x//bs, x//bs + bs) for vy in range(y//bs, y//bs + bs) if (vx, vy) != (x, y)]
-    
+        block = [(vx, vy) for vx in range(x//bs * bs, x//bs * bs + bs) for vy in range(y//bs * bs, y//bs * bs + bs) if (vx, vy) != (x, y)]
         return set(row + col + block)
     
     def run(self):
-        # inits
-        self.variables = set([(x, y) for x in range(self.sudoku.size) for y in self.get_emtpy_cells(x)])
-        # self.domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in self.variables])
-        self.domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in [(x, y) for x in range(9) for y in range(9)]])
+        self.variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)])
+        self.domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in self.variables])
+        self.binary_cs = set([((x, y), (vx, vy)) for x, y in self.variables for vx, vy in self.get_connected_cells(x, y).intersection(self.variables)])
         
-        self.binary_cs = set([((x, y), (vx, vy)) for x, y in self.variables for vx, vy in self.get_connected_cells(x, y)])
-        
-        worklist = [(a, b) for (a, b) in self.binary_cs] # can exclude (a,b) == (b,a)... later...
-        
-        # for key in self.domains:
-        #     print(key, self.domains[key])
-        
-        # return False
+        worklist = [(a, b) for (a, b) in self.binary_cs]
         
         while len(worklist) > 0:
             a, b = worklist.pop()
-            # print(a, self.domains[a])
+            self.cycles += 1
+
             if self.reduce(a, b):
                 if len(self.domains[a]) == 0:
-                    print("FAILURE")
-                    # print(a, self.domains[a])
                     return False
-                # print(a, self.domains[a])
-                # worklist += [(c, a) for (a, b) in self.binary_cs for c in self.variables if c != a]
-                # worklist.append((self.get_connected_cells(a[0], a[1]), a))
-                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]) if c != a]
-                
-                
-        return False
+
+                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]).intersection(self.variables) if c != a]
+        
+        for x, y in self.domains:
+            self.sudoku.enter(x, y, self.domains[(x, y)].pop())
+        return True
         
     def reduce(self, a, b):
         change = False
-        # for vx in self.domains
         for va in list(self.domains[a]):
             found = False
             for vb in list(self.domains[b]):
@@ -302,7 +295,6 @@ class ArcConsistencySolver:
                     found = True
             
             if not found:
-                print("removed", va, "from", a)
                 self.domains[a].remove(va)
                 change = True
                 
@@ -311,17 +303,17 @@ class ArcConsistencySolver:
 if __name__ == "__main__":
     f = open("Sudoku1.txt", "r")
     s = Sudoku(f.read())
-    # s = Sudoku(size = 25)
-    s.print()
+    # s = Sudoku(size = 4)
+    # s.print()
     solver = ArcConsistencySolver(s)
     # solver = SimpleSolver(s)
     output = solver.run()
-    # s.print()
+    s.print()
     print("solved:\t\t", output,
           "\nguesses made:\t", solver.guesses,
           "\ncomparisons:\t", solver.cycles)
 
     # for s in load_multiple_from_file():
-    #     solver = OptimisedSolver(s)
+    #     solver = ArcConsistencySolver(s)
     #     output = solver.run()
     #     print(output, f"{solver.guesses:5d}", f"{solver.cycles:8d}")
