@@ -75,20 +75,21 @@ class Sudoku:
     def is_valid_move(self, x, y, val):
         # first check if move is on board
         if x >= self.size or y >= self.size:
+            raise Exception("Value outside playingfield")
             return False
         
         # check if cell is already filled
-        if self.board[y][x] != 0:
-            return False
+        # if self.board[y][x] != 0:
+        #     return False
 
         # check if value is already blocked in the two lines and block
-        if val in self.get_col(x): 
+        if val in self.get_col(x):
             return False
         
         if val in self.get_row(y):
             return False
         
-        if val in self.get_block_list(x, y):
+        if val in self.get_block_list(x // self.block_size, y // self.block_size):
             return False
         
         return True
