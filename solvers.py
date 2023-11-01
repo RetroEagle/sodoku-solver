@@ -118,12 +118,67 @@ class AdvancedSolver(Solver):
         self.sudoku = sudoku
         self.guesses = 0
         self.cycles = 0
+        
+    def purge(self, x, y, val, domains, variables):
+        # remove value from all connected domains
+        changed = False
+        for x2, y2 in self.get_connected_cells(x, y).intersection(variables):
+            self.cycles += 1
+            if val in domains[(x2, y2)]:
+                domains[(x2, y2)].remove(val)
+                changed = True
+        
+        # remove from variables, as it has been set and is no longer a variable
+        variables.remove((x, y))
+        self.cycles += 1
+        return changed
     
-    def run(self):
-        # prepares variables, domains and worklist (worklist contains all constraints)
-        # variables = set([(x, y) for y in range(self.sudoku.size) for x in range(self.sudoku.size)])
-        variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)]) # set of tuples
-        domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in variables]) # dict to link each position to a set of values
+    def run(self, variables = None):
+        if variables == None:
+            variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)])
+            self.cycles += len(variables)
+            
+        domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in variables])
+        self.cycles += len(domains)
+        
+        changed = True
+        while changed:
+            changed = False
+            for x, y in variables.copy():
+                self.cycles += 1
+                if len(domains[(x, y)]) <= 1:
+                    if len(domains[(x, y)]) == 0:
+                        return False # contradiction
+                    
+                    val = list(domains[(x, y)])[0]
+                    self.sudoku.enter(x, y, val)
+                    
+                    changed = self.purge(x, y, val, domains, variables) or changed
+                    
+        if len(variables) > 0:
+            # take a guess by choosing a variable with the smalles possible domain to reduce guesses
+            x, y = sorted(variables, key=lambda a : len(domains[a]))[0]
+            
+            for val in domains[(x, y)]:
+                self.guesses += 1
+                child = self.sudoku.clone()
+                child.enter(x, y, val)
+                child_solver = type(self)(child)
+                
+                # slight performance improvements, purging the guess is faster than making a new variables set
+                new_variables = variables.copy()
+                self.purge(x, y, val, domains, new_variables)
+                output = child_solver.run(new_variables)
+                self.guesses += child_solver.guesses
+                self.cycles += child_solver.cycles
+                
+                if output:
+                    changed = True
+                    self.sudoku.board = child.board
+                    return True # sudoku was completed by a guessed child
+            return False # sudoku is not solvable
+        return True # sudoku was completed without guessing (this iterations)
+                    
                     
 class BorkenOptimisedSolver(Solver):
     def __init__(self, sudoku: Sudoku):
@@ -336,7 +391,7 @@ class AdvancedAC3Solver(ArcConsistencySolver):
                     self.guesses += 1
                     child = self.sudoku.clone()
                     child.enter(x, y, val)
-                    child_solver = AdvancedAC3Solver(child)
+                    child_solver = type(self)(child)
                     if child_solver.run():
                         self.cycles += child_solver.cycles
                         self.guesses += child_solver.guesses
@@ -350,25 +405,30 @@ class AdvancedAC3Solver(ArcConsistencySolver):
 if __name__ == "__main__":
     f = open("Sudoku3.txt", "r")
     s = Sudoku(f.read())
-    
+    # s = Sudoku(size=16)
     s.print()
     # solver = AdvancedAC3Solver(s)
-    solver = AdvancedSolver(s)
+    solver = SimpleSolver(s)
     output = solver.run()
     s.print()
     print("solved:\t\t", solver.sudoku.is_correct(),
           "\nguesses made:\t", solver.guesses,
           "\ncomparisons:\t", solver.cycles)
 
-    # print("name comparisons guesses name\t       comparisons guesses")
-    # for s in load_multiple_from_file()[:10]:
-    #     solver = AdvancedAC3Solver(s.clone())
-    #     output = solver.run()
+    total1, total2 = 0, 0
+
+    print("name comparisons guesses name\t       comparisons guesses")
+    for s in load_multiple_from_file():
+        solver = AdvancedSolver(s.clone())
+        output = solver.run()
         
-    #     solver2 = SimpleSolver(s)
-    #     output2 = solver2.run()
+        solver2 = SimpleSolver(s)
+        output2 = solver2.run()
         
-    #     # print(solver.sudoku.is_correct(), "\t", f"{solver.guesses:5d}", f"{solver.cycles:8d}")
-    #     # print(solver.sudoku.is_correct(), "\t", f"{solver.guesses:5d}", f"{solver.cycles:8d}")
-    #     print(f"AC3: {solver.cycles:8d} {solver.guesses:5d} \t SimpleSolver: {solver2.cycles:8d} {solver2.guesses:5d}")
+        total1 += solver.cycles
+        total2 += solver2.cycles
         
+        # print(solver.sudoku.is_correct(), "\t", f"{solver.guesses:5d}", f"{solver.cycles:8d}")
+        print(f"AC3: {solver.cycles:8d} {solver.guesses:5d} \t SimpleSolver: {solver2.cycles:8d} {solver2.guesses:5d}")
+    
+    print(total1, total2)

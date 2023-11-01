@@ -4,8 +4,7 @@ import time
 
 
 def benchmark():
-    old_time = time.time_ns()
-    
+    old_time = time.time_ns()    
     for s in load_multiple_from_file():
         solver = SimpleSolver(s)
         output = solver.run()
