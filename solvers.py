@@ -1,5 +1,36 @@
 from sudoku import *
 
+class Solver:
+    def get_emtpy_cells(self, row):
+        empty_cells = []
+        row_list = self.sudoku.get_row(row)
+        for i in range(self.sudoku.size):
+            if row_list[i] == 0:
+                empty_cells.append(i)
+        
+        return empty_cells
+    
+    def get_possible_values(self, x, y):
+        val = self.sudoku.get_value(x, y)
+        if val != 0: # this is in case x, y already has a value 
+            return {val}
+        possible_values = []
+        for val in range(1, self.sudoku.size + 1):
+            if self.sudoku.is_valid_move(x, y, val):
+                possible_values.append(val)
+        return set(possible_values)
+    
+    def get_connected_cells(self, x, y):
+        s = self.sudoku.size
+        bs = int(math.sqrt(s))
+        # row
+        row = [(vx, y) for vx in range(self.sudoku.size) if vx != x]
+        # col
+        col = [(x, vy) for vy in range(self.sudoku.size) if vy != y]
+        # block
+        block = [(vx, vy) for vx in range(x//bs * bs, x//bs * bs + bs) for vy in range(y//bs * bs, y//bs * bs + bs) if (vx, vy) != (x, y)]
+        return set(row + col + block) # converting to a set is an easy way of getting rid of duplicates
+
 class SimpleSolver:
     def __init__(self, sudoku: Sudoku):
         self.sudoku = sudoku
@@ -19,12 +50,14 @@ class SimpleSolver:
                 # figure out which values are missing
                 missing_values = []
                 for i in range(1, size + 1):
+                    self.cycles += 1
                     if not i in block:
                         missing_values.append(i)
 
                 # figure out coords of the open cells
                 open_cells = [] # list of cells in the block that dont have a value yet            
                 for i in range(size):
+                    self.cycles += 1
                     if block[i] == 0:
                         open_cells.append(i)
 
@@ -79,20 +112,24 @@ class SimpleSolver:
                         return True
 
         return self.sudoku.is_filled()
-                    
-class BorkenOptimisedSolver:
+  
+class AdvancedSolver(Solver):
     def __init__(self, sudoku: Sudoku):
         self.sudoku = sudoku
         self.guesses = 0
         self.cycles = 0
-
-    # def get_missing_vals(self, x, y):
-    #     missing_values = []
-    #     block = self.sudoku.get_block_list(x, y)
-    #     for i in range(1, self.sudoku.size + 1):
-    #         if not i in block:
-    #             missing_values.append(i)
-    #     return missing_values
+    
+    def run(self):
+        # prepares variables, domains and worklist (worklist contains all constraints)
+        # variables = set([(x, y) for y in range(self.sudoku.size) for x in range(self.sudoku.size)])
+        variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)]) # set of tuples
+        domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in variables]) # dict to link each position to a set of values
+                    
+class BorkenOptimisedSolver(Solver):
+    def __init__(self, sudoku: Sudoku):
+        self.sudoku = sudoku
+        self.guesses = 0
+        self.cycles = 0
     
     def get_missing_values(self, row):
         missing_values = []
@@ -101,14 +138,6 @@ class BorkenOptimisedSolver:
             if val not in row_list:
                 missing_values.append(val)
         return missing_values
-
-    def get_emtpy_cells(self, row):
-        empty_cells = []
-        row_list = self.sudoku.get_row(row)
-        for i in range(self.sudoku.size):
-            if row_list[i] == 0:
-                empty_cells.append(i)
-        return empty_cells
 
     def get_open_cells(self, x, y):
         open_cells = [] 
@@ -222,98 +251,124 @@ class BorkenOptimisedSolver:
 
         return False
 
-class ArcConsistencySolver:
+class ArcConsistencySolver(Solver):
     def __init__(self, sudoku: Sudoku):
         self.sudoku = sudoku
         self.guesses = 0
         self.cycles = 0
         
-        self.variables = {}
-        self.domains = {}
         self.unary_cs = {} # unary constraints (not needed?)
         self.binary_cs = {} # binary constraints (always must be x != y)
     
-    def get_emtpy_cells(self, row):
-        empty_cells = []
-        row_list = self.sudoku.get_row(row)
-        for i in range(self.sudoku.size):
-            if row_list[i] == 0:
-                empty_cells.append(i)
-        
-        return empty_cells
-    
-    def get_possible_values(self, x, y):
-        val = self.sudoku.get_value(x, y)
-        
-        if val != 0:
-            return {val}
-        
-        possible_values = []
-        for val in range(1, self.sudoku.size + 1):
-            if self.sudoku.is_valid_move(x, y, val):
-                possible_values.append(val)
-        return set(possible_values)
-    
-    def get_connected_cells(self, x, y):
-        s = self.sudoku.size
-        bs = int(math.sqrt(s))
-        # row
-        row = [(vx, y) for vx in range(self.sudoku.size) if vx != x]
-        # col
-        col = [(x, vy) for vy in range(self.sudoku.size) if vy != y]
-        # block
-        block = [(vx, vy) for vx in range(x//bs * bs, x//bs * bs + bs) for vy in range(y//bs * bs, y//bs * bs + bs) if (vx, vy) != (x, y)]
-        return set(row + col + block)
-    
     def run(self):
-        self.variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)])
-        self.domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in self.variables])
-        self.binary_cs = set([((x, y), (vx, vy)) for x, y in self.variables for vx, vy in self.get_connected_cells(x, y).intersection(self.variables)])
+        # prepares variables, domains and worklist (worklist contains all constraints)
+        # variables = set([(x, y) for y in range(self.sudoku.size) for x in range(self.sudoku.size)])
+        variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)]) # set of tuples
+        domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in variables]) # dict to link each position to a set of values
+        worklist = [((x, y), (vx, vy)) for x, y in variables for vx, vy in self.get_connected_cells(x, y).intersection(variables)] # list of constraints
         
-        worklist = [(a, b) for (a, b) in self.binary_cs]
-        
+        # iterate over worklist
         while len(worklist) > 0:
             a, b = worklist.pop()
-            self.cycles += 1
+            # self.cycles += 1 # cycle is better computed in reduce
 
-            if self.reduce(a, b):
-                if len(self.domains[a]) == 0:
+            if self.reduce(a, b, domains):
+                if len(domains[a]) == 0: 
                     return False
-
-                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]).intersection(self.variables) if c != a]
+                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]).intersection(variables) if c != a]
+            
+        solved = True
+        # enter finished values into sudoku
+        for x, y in domains:
+            if len(domains[(x, y)]) == 1:
+                self.sudoku.enter(x, y, domains[(x, y)].pop())
+            else:
+                solved = False
+            
+        return solved
         
-        for x, y in self.domains:
-            self.sudoku.enter(x, y, self.domains[(x, y)].pop())
-        return True
-        
-    def reduce(self, a, b):
+    def reduce(self, a, b, domains):
         change = False
-        for va in list(self.domains[a]):
+        for va in list(domains[a]):
             found = False
-            for vb in list(self.domains[b]):
+            for vb in list(domains[b]):
+                self.cycles += 1
                 if va != vb:
                     found = True
             
             if not found:
-                self.domains[a].remove(va)
+                domains[a].remove(va)
                 change = True
+                # return True
                 
         return change
         
+class AdvancedAC3Solver(ArcConsistencySolver):
+    def __init__(self, sudoku: Sudoku):
+        ArcConsistencySolver.__init__(self, sudoku)       
+        
+    def run(self):
+        # setup stuff (either recieve all or create all)
+        variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)]) # set of tuples
+        domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in variables]) # dict to link each position to a set of values
+        worklist = [((x, y), (vx, vy)) for x, y in variables for vx, vy in self.get_connected_cells(x, y).intersection(variables)] # list of constraints
+        
+        self.cycles += len(variables) + len(domains) + len(worklist) # account for computational steps needed to create lists (technically not needed)
+        # its also missing some computations in worklist because I first call get_connected_cells() but then discard most values by intersecting the set with variables
+        # but ehh, whatever. Insignificant
+        
+        # iterate over worklist
+        while len(worklist) > 0:
+            a, b = worklist.pop()
+            # self.cycles += 1 # cycle is better computed in reduce
+
+            if self.reduce(a, b, domains):
+                if len(domains[a]) == 0: 
+                    return False
+                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]).intersection(variables) if c != a]
+            
+            
+        for x, y in domains:
+            if len(domains[(x, y)]) == 1:
+                self.sudoku.enter(x, y, domains[(x, y)].pop())
+            else:
+                for val in domains[(x, y)]:
+                    self.guesses += 1
+                    child = self.sudoku.clone()
+                    child.enter(x, y, val)
+                    child_solver = AdvancedAC3Solver(child)
+                    if child_solver.run():
+                        self.cycles += child_solver.cycles
+                        self.guesses += child_solver.guesses
+                        self.sudoku.board = child.board
+                        return True # this means a child found a solution
+                    self.cycles += child_solver.cycles
+                    self.guesses += child_solver.guesses
+                return False # if this gets reached somthing went REALLY wrong
+        return True # reaching this means AC3 found a solution on its own
+    
 if __name__ == "__main__":
-    f = open("Sudoku1.txt", "r")
+    f = open("Sudoku3.txt", "r")
     s = Sudoku(f.read())
-    # s = Sudoku(size = 4)
-    # s.print()
-    solver = ArcConsistencySolver(s)
-    # solver = SimpleSolver(s)
+    
+    s.print()
+    # solver = AdvancedAC3Solver(s)
+    solver = AdvancedSolver(s)
     output = solver.run()
     s.print()
-    print("solved:\t\t", output,
+    print("solved:\t\t", solver.sudoku.is_correct(),
           "\nguesses made:\t", solver.guesses,
           "\ncomparisons:\t", solver.cycles)
 
-    # for s in load_multiple_from_file():
-    #     solver = ArcConsistencySolver(s)
+    # print("name comparisons guesses name\t       comparisons guesses")
+    # for s in load_multiple_from_file()[:10]:
+    #     solver = AdvancedAC3Solver(s.clone())
     #     output = solver.run()
-    #     print(output, f"{solver.guesses:5d}", f"{solver.cycles:8d}")
+        
+    #     solver2 = SimpleSolver(s)
+    #     output2 = solver2.run()
+        
+    #     # print(solver.sudoku.is_correct(), "\t", f"{solver.guesses:5d}", f"{solver.cycles:8d}")
+    #     # print(solver.sudoku.is_correct(), "\t", f"{solver.guesses:5d}", f"{solver.cycles:8d}")
+    #     print(f"AC3: {solver.cycles:8d} {solver.guesses:5d} \t SimpleSolver: {solver2.cycles:8d} {solver2.guesses:5d}")
+        

@@ -76,11 +76,10 @@ class Sudoku:
         # first check if move is on board
         if x >= self.size or y >= self.size:
             raise Exception("Value outside playingfield")
-            return False
         
         # check if cell is already filled
-        # if self.board[y][x] != 0:
-        #     return False
+        if self.board[y][x] != 0:
+            return False
 
         # check if value is already blocked in the two lines and block
         if val in self.get_col(x):
@@ -102,9 +101,16 @@ class Sudoku:
         return True
     
     def is_correct(self):
-        for row in range(self.size):
-            pass
-        pass
+        # this does not need to be efficient, just a very simple short way of checking
+        for i in range(self.size):
+            if len(list(itertools.groupby(self.get_row(i)))) != self.size:
+                return False
+            if len(list(itertools.groupby(self.get_col(i)))) != self.size:
+                return False
+            if len(list(itertools.groupby(self.get_block_list(i//3, i%3)))) != self.size:
+                return False
+        return True
+
     
     def get_value(self, x, y):
         return self.board[y][x]
@@ -142,7 +148,7 @@ class Sudoku:
         return exp_str
         
     def clone(self):
-        # more efficient then exporting and importing via string...
+        # more efficient then exporting and importing via string... slightly
         new_sudoku = Sudoku(size=self.size)
         for y in range(len(self.board)):
             for x in range(len(self.board[0])):
