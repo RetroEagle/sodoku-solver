@@ -4,7 +4,7 @@ import itertools
 
 class Sudoku:
     def __init__(self, board = None, size=9):
-        self.board = np.array([[0 for j in range(size)] for i in range(size)])
+        self.board = np.array([[0 for _ in range(size)] for _ in range(size)])
         self.size = size
         self.block_size = int(math.sqrt(size))
         if not (board == None):
@@ -90,7 +90,6 @@ class Sudoku:
         
         if val in self.get_block_list(x // self.block_size, y // self.block_size):
             return False
-        
         return True
     
     def is_filled(self):

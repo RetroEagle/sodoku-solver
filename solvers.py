@@ -178,8 +178,7 @@ class AdvancedSolver(Solver):
                     return True # sudoku was completed by a guessed child
             return False # sudoku is not solvable
         return True # sudoku was completed without guessing (this iterations)
-                    
-                    
+                   
 class BorkenOptimisedSolver(Solver):
     def __init__(self, sudoku: Sudoku):
         self.sudoku = sudoku
