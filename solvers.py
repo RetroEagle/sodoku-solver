@@ -234,29 +234,18 @@ class BorkenOptimisedSolver(Solver):
         for key, lst in solutions:
             solution_dict[len(lst) - 1].append((key, lst))
 
-        # print(solution_dict[0])
-
-        # return False
-
         changed = True
         while changed:
             changed = False
             elem = None
-            # print(solution_dict[0])
-            # print(solution_dict[1])
-            # print(solution_dict[2])
 
             for i in range(size):
-                # print(key)
                 if len(solution_dict[i]) > 0:
                     elem = solution_dict[i].pop()
                     break
-
-            # print(elem)
+                
             if elem == None or len(elem[1]) == 0:
                 return False
-            
-            # print(solution_dict[4])
 
             if len(elem[1]) == 1:
                 (row, col), (val,) = elem
@@ -270,8 +259,6 @@ class BorkenOptimisedSolver(Solver):
                 while i < len(available_values[val]):
                     (r, c), l = available_values[val][i]
                     # if in col, row or block
-                    # print((r, c), (row, col))
-                    # print("ROW", c == col, "COL", r == row, "BLOCK", ((c // block_size == col // block_size) and (r // block_size == row // block_size)))
                     if c == col or r == row or ((c // block_size == col // block_size) and (r // block_size == row // block_size)):
                         # adjust available_values
                         if c == col and r == row:
@@ -280,17 +267,12 @@ class BorkenOptimisedSolver(Solver):
                         else:
                             available_values[val][i] = ((r, c), l-1)
                         # remove from solution dict
-                        # for j in range(len(solution_dict[l-1])):
                         j = 0
-                        # print(solution_dict[l-1])
                         while j < len(solution_dict[l-1]):
-                            # print("checking:", j, solution_dict[l-1][j], (r, c))
                             key, lst = solution_dict[l-1][j]
-                            # print(key, r, c)
                             if key == (r, c):
                                 print(key, lst, val)
                                 lst.remove(val)
-                                # print("from:", row, col)
                                 print("REMOVED", r, c, val)
                                 solution_dict[l-2].append(solution_dict[l-1].pop(j))
                                 j -= 1
@@ -300,10 +282,6 @@ class BorkenOptimisedSolver(Solver):
 
             else:
                 return False # make a guess
-
-        # for i in available_values:
-        #     print(i)
-
         return False
 
 class ArcConsistencySolver(Solver):
