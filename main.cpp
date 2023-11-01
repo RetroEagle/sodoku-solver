@@ -10,6 +10,9 @@ using matrix = array<array<int, size>, size>;
 
 class Sudoku
 {
+private:
+    matrix<9> board;
+
 public:
     void load()
     {
@@ -67,15 +70,43 @@ public:
     bool is_valid_move(int x, int y, int val)
     {
         if (board[x][y])
-            return false
+            return false;
         return true;
     }
 
-    
+    array<int, 9> get_row(int index)
+    {
+        // return board[index];
+        array<int, 9> row;
+        for (int i = 0; i < 9; i++)
+        {
+            row[i] = board[index][i];
+        }
+        return row;
+    }
 
+    array<int, 9> get_col(int index)
+    {
+        array<int, 9> column;
+        for (int i = 0; i < 9; i++)
+        {
+            column[i] = board[i][index];
+        }
+        return column;
+    }
 
-private:
-    matrix<9> board;
+    array<int, 9> get_block(int x, int y)
+    {
+        array<int, 9> block;
+        for (int ty = 3 * y; ty < (3 + 3 * y); ty++)
+        {
+            for (int tx = 3 * x; tx < (3 + 3 * x); tx++)
+            {
+                block[(ty - 3 * y) * 3 + tx - 3 * x] = board[ty][tx];
+            }
+        }
+        return block;
+    }
 };
 
 class Solver
@@ -127,6 +158,9 @@ int main(int argc, char *argv[])
     
     Solver solver(sudoku);
     sudoku.print();
+    // cout << sudoku.get_col(2) << endl;
+    for (int &i : sudoku.get_block(1, 0))
+        cout << i << endl;
 
     return 0;
 }
