@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 #include <array>
+#include <tuple>
+#include <vector>
 
 using namespace std;
 
@@ -74,9 +76,22 @@ public:
         return true;
     }
 
+    int get_empty_cell_count()
+    {
+        int count = 0;
+        for (auto &row : board)
+        {
+            for (int &val : row)
+            {
+                if (val == 0)
+                    count++;
+            }
+        }
+        return count;
+    }
+
     array<int, 9> get_row(int index)
     {
-        // return board[index];
         array<int, 9> row;
         for (int i = 0; i < 9; i++)
         {
@@ -98,14 +113,28 @@ public:
     array<int, 9> get_block(int x, int y)
     {
         array<int, 9> block;
-        for (int ty = 3 * y; ty < (3 + 3 * y); ty++)
+        for (int ty = 3 * y; ty < (3 + 3 * y); ty++) 
         {
-            for (int tx = 3 * x; tx < (3 + 3 * x); tx++)
+            for (int tx = 3 * x; tx < (3 + 3 * x); tx++) 
             {
                 block[(ty - 3 * y) * 3 + tx - 3 * x] = board[ty][tx];
             }
         }
         return block;
+    }
+
+    vector<tuple<int, int>> get_empty_cells()
+    {
+        vector<tuple<int, int>> empty_cells;
+        for (int y = 0; y < 9; y++)
+        {
+            for (int x = 0; x < 9; x++)
+            {
+                if (board[y][x] == 0)
+                    empty_cells.push_back({x, y});
+            }
+        }
+        return empty_cells;
     }
 };
 
@@ -122,6 +151,13 @@ public:
 
     bool run()
     {
+        vector<tuple<int, int>> variables = sudoku.get_empty_cells();
+
+        for (tuple<int, int> &x : variables)
+        {
+            cout << get<0>(x) << ' ' << get<1>(x) << endl;
+        }
+
         return false;
     }
 };
@@ -159,8 +195,19 @@ int main(int argc, char *argv[])
     Solver solver(sudoku);
     sudoku.print();
     // cout << sudoku.get_col(2) << endl;
-    for (int &i : sudoku.get_block(1, 0))
-        cout << i << endl;
+    // for (int &i : sudoku.get_block(1, 0))
+    //     cout << i << endl;
+
+    // cout << sudoku.get_empty_cell_count() << endl;
+
+    // tuple<int, int> a = {1, 2};
+    // tuple<int, int> b = {1, 2};
+
+    // cout << (a == b) << endl;
+
+    // array<int, 9> a = {1, 2, 3, 4, 5, 6};
+
+    solver.run();
 
     return 0;
 }
