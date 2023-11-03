@@ -15,8 +15,8 @@ struct pos
 {
     int x = 0;
     int y = 0;
+    auto operator<=>(const pos &) const = default;
 };
-
 
 class Sudoku
 {
@@ -54,7 +54,8 @@ public:
                 if (val > 0)
                 {
                     cout << ' ' << val;
-                } else
+                }
+                else
                 {
                     cout << " .";
                 }
@@ -69,12 +70,12 @@ public:
         {
             throw invalid_argument("Value is already filled");
             // return false;
-        } else
+        }
+        else
         {
             board[y][x] = val;
             return true;
         }
-
     }
 
     bool is_valid_move(int x, int y, int val)
@@ -87,7 +88,7 @@ public:
         for (int &n : get_row(y))
             if (n == val)
                 return false;
-                
+
         // check colum
         for (int &n : get_col(x))
             if (n == val)
@@ -126,39 +127,39 @@ public:
         array<int, 9> column;
         for (int i = 0; i < 9; i++)
             column[i] = board[i][index];
-        
+
         return column;
     }
 
     array<int, 9> get_block(int x, int y)
     {
         array<int, 9> block;
-        for (int ty = 3 * y; ty < (3 + 3 * y); ty++) 
-            for (int tx = 3 * x; tx < (3 + 3 * x); tx++) 
+        for (int ty = 3 * y; ty < (3 + 3 * y); ty++)
+            for (int tx = 3 * x; tx < (3 + 3 * x); tx++)
                 block[(ty - 3 * y) * 3 + tx - 3 * x] = board[ty][tx];
 
         return block;
     }
 
-    vector<tuple<int, int>> get_empty_cells()
+    vector<pos> get_empty_cells()
     {
-        vector<tuple<int, int>> empty_cells;
+        vector<pos> empty_cells;
         for (int y = 0; y < 9; y++)
             for (int x = 0; x < 9; x++)
                 if (board[y][x] == 0)
-                    empty_cells.push_back({x, y});
+                    empty_cells.push_back(pos{x, y});
 
         return empty_cells;
     }
 
-    vector<tuple<int, int>> get_connected_cells(int x, int y, vector<tuple<int, int>> variables)
+    vector<pos> get_connected_cells(int x, int y, vector<pos> variables)
     {
-        vector<tuple<int, int>> connected_cells;
+        vector<pos> connected_cells;
         for (auto &var : variables)
             // if in row OR in column OR in block
-            if (get<0>(var) == x || get<1>(var) == y || ((get<0>(var) / 3 == x / 3) && (get<1>(var) / 3 == y / 3)))
-                if (get<0>(var) != x || get<1>(var) != y)
-                    connected_cells.push_back({get<0>(var), get<1>(var)});
+            if (var.x == x || var.y == y || ((var.x / 3 == x / 3) && (var.y / 3 == y / 3)))
+                if (var.x != x || var.y != y)
+                    connected_cells.push_back({var.x, var.y});
 
         return connected_cells;
     }
@@ -173,12 +174,12 @@ public:
         return values;
     }
 
-    map<tuple<int, int>, vector<int>> get_domains(vector<tuple<int, int>> variables)
+    map<pos, vector<int>> get_domains(vector<pos> variables)
     {
-        map<tuple<int, int>, vector<int>> domains;
-        for (tuple <int, int> &pos : variables)
+        map<pos, vector<int>> domains;
+        for (pos &p : variables)
         {
-            domains.insert({pos, get_possible_values(get<0>(pos), get<1>(pos))});
+            domains.insert({p, get_possible_values(p.x, p.y)});
         }
         return domains;
     }
@@ -191,13 +192,13 @@ public:
         return false;
     }
 
-    bool purge(int x, int y, int val, map<tuple<int, int>, vector<int>> &domains, vector<tuple<int, int>> &variables)
+    bool purge(int x, int y, int val, map<pos, vector<int>> &domains, vector<pos> &variables)
     {
         bool changed = false;
         // adjust all related domains
-        for (auto &pos : get_connected_cells(x, y, variables))
+        for (pos &p : get_connected_cells(x, y, variables))
         {
-            auto output = domains.find(pos);
+            auto output = domains.find(p);
             if (contains(val, (output->second)))
             {
                 erase((output->second), val);
@@ -205,8 +206,8 @@ public:
             }
         }
 
-        domains.erase(tuple<int, int>{x, y}); // not strictly neccessary
-        erase(variables, tuple<int, int>{x, y});
+        domains.erase(pos{x, y}); // not strictly neccessary
+        erase(variables, pos{x, y});
         return changed;
     }
 };
@@ -217,7 +218,7 @@ private:
     Sudoku &sudoku;
 
 public:
-    Solver(Sudoku &s) : sudoku (s) { }
+    Solver(Sudoku &s) : sudoku(s) {}
 
     Sudoku get_sudoku()
     {
@@ -226,35 +227,50 @@ public:
 
     bool run()
     {
-        vector<tuple<int, int>> variables = sudoku.get_empty_cells();
-        map<tuple<int, int>, vector<int>> domains = sudoku.get_domains(variables);
+        vector<pos> variables = sudoku.get_empty_cells();
+        map<pos, vector<int>> domains = sudoku.get_domains(variables);
+
+        // for (auto &o : variables)
+        // {
+        //     cout << o.x << " " << o.y << endl;
+        // }
+
+        // for (auto [a, b] : domains)
+        // {
+        //     cout << a.x << " " << a.y << " : ";
+
+        //     for (auto v : b)
+        //     {
+        //         cout << v << " ";
+        //     }
+        //     cout << endl;
+        // }
 
         bool changed = true;
         while (changed)
         {
             changed = false;
-            // for (auto &pos : variables)
             for (int i = 0; i < variables.size(); i++)
             {
-                tuple<int, int> pos = variables[i];
+                pos p = variables[i];
 
-                int x = get<0>(pos);
-                int y = get<1>(pos);
+                int x = p.x;
+                int y = p.y;
 
-                auto output = domains.find(pos);
+                auto output = domains.find(p);
 
                 if ((output->second).size() <= 1)
                 {
                     if ((output->second).size() == 0)
                         return false;
-                
+
                     int val = (output->second)[0];
 
                     sudoku.enter(x, y, val);
                     sudoku.purge(x, y, val, domains, variables); // remove val from connected domains
                     changed = true;
                     i--; // reduce counter as we remove an element from list we are iterating over
-                }   
+                }
             }
         }
         return false;
@@ -265,16 +281,12 @@ int main(int argc, char *argv[])
 {
     Sudoku sudoku;
     sudoku.load();
-    
-    Solver solver(sudoku);
-    sudoku.print();
-    
-    pos a;
-    cout << a.x << endl;
 
+    Solver solver(sudoku);
+    
+    sudoku.print();
     solver.run();
     sudoku.print();
-
 
     return 0;
 }
