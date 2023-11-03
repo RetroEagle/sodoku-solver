@@ -11,6 +11,13 @@ using namespace std;
 template <int size>
 using matrix = array<array<int, size>, size>;
 
+struct pos
+{
+    int x = 0;
+    int y = 0;
+};
+
+
 class Sudoku
 {
 private:
@@ -21,7 +28,7 @@ public:
     {
         string line;
         ifstream file;
-        file.open("sudokus/dummy1.txt");
+        file.open("sudokus/Sudoku3.txt");
         int row = 0;
         int col = 0;
 
@@ -78,22 +85,18 @@ public:
 
         // check row
         for (int &n : get_row(y))
-        {
             if (n == val)
                 return false;
-        }
+                
         // check colum
         for (int &n : get_col(x))
-        {
             if (n == val)
                 return false;
-        }
+
         // check block
         for (int &n : get_block(x / 3, y / 3))
-        {
             if (n == val)
                 return false;
-        }
 
         return true;
     }
@@ -102,13 +105,10 @@ public:
     {
         int count = 0;
         for (auto &row : board)
-        {
             for (int &val : row)
-            {
                 if (val == 0)
                     count++;
-            }
-        }
+
         return count;
     }
 
@@ -116,9 +116,8 @@ public:
     {
         array<int, 9> row;
         for (int i = 0; i < 9; i++)
-        {
             row[i] = board[index][i];
-        }
+
         return row;
     }
 
@@ -126,9 +125,8 @@ public:
     {
         array<int, 9> column;
         for (int i = 0; i < 9; i++)
-        {
             column[i] = board[i][index];
-        }
+        
         return column;
     }
 
@@ -136,12 +134,9 @@ public:
     {
         array<int, 9> block;
         for (int ty = 3 * y; ty < (3 + 3 * y); ty++) 
-        {
             for (int tx = 3 * x; tx < (3 + 3 * x); tx++) 
-            {
                 block[(ty - 3 * y) * 3 + tx - 3 * x] = board[ty][tx];
-            }
-        }
+
         return block;
     }
 
@@ -149,13 +144,10 @@ public:
     {
         vector<tuple<int, int>> empty_cells;
         for (int y = 0; y < 9; y++)
-        {
             for (int x = 0; x < 9; x++)
-            {
                 if (board[y][x] == 0)
                     empty_cells.push_back({x, y});
-            }
-        }
+
         return empty_cells;
     }
 
@@ -175,12 +167,9 @@ public:
     {
         vector<int> values;
         for (int i = 1; i < 10; i++)
-        {
             if (is_valid_move(x, y, i))
                 values.push_back(i);
 
-            // cout << "(" << x << ", " << y << ") " << i << " " << is_valid_move(x, y, i) << endl;
-        }
         return values;
     }
 
@@ -211,19 +200,13 @@ public:
             auto output = domains.find(pos);
             if (contains(val, (output->second)))
             {
-                domains.erase(pos);
+                erase((output->second), val);
                 changed = true;
             }
         }
-        tuple<int, int> test = {x, y};
-        // remove variable, as it has been filled
-        for (int i = 0; i < variables.size(); i++)
-        {
-            if (variables[i] == test)
-            {
-                variables.erase(variables.begin() + i);
-            }
-        }
+
+        domains.erase(tuple<int, int>{x, y}); // not strictly neccessary
+        erase(variables, tuple<int, int>{x, y});
         return changed;
     }
 };
@@ -231,13 +214,10 @@ public:
 class Solver
 {
 private:
-    Sudoku sudoku;
+    Sudoku &sudoku;
 
 public:
-    Solver(Sudoku s)
-    {
-        sudoku = s;
-    }
+    Solver(Sudoku &s) : sudoku (s) { }
 
     Sudoku get_sudoku()
     {
@@ -253,8 +233,11 @@ public:
         while (changed)
         {
             changed = false;
-            for (auto &pos : variables)
+            // for (auto &pos : variables)
+            for (int i = 0; i < variables.size(); i++)
             {
+                tuple<int, int> pos = variables[i];
+
                 int x = get<0>(pos);
                 int y = get<1>(pos);
 
@@ -266,68 +249,32 @@ public:
                         return false;
                 
                     int val = (output->second)[0];
-                    // cout << x << " " << y << " " << val << " " << endl;
+
                     sudoku.enter(x, y, val);
-                    sudoku.purge(x, y, val, domains, variables);
+                    sudoku.purge(x, y, val, domains, variables); // remove val from connected domains
                     changed = true;
+                    i--; // reduce counter as we remove an element from list we are iterating over
                 }   
             }
         }
-
-        
-        // for (auto &x : domains)
-        // {
-        //     cout << get<0>(x.first) << ' ' << get<1>(x.first) << " : [ ";
-        //     for (auto &v : x.second)
-        //         cout << v << " ";
-        //     cout << "]" <<endl;
-        // }
-
-        // for (auto &x : sudoku.get_possible_values(0, 0))
-        // {
-        //     // for (auto &y : get<0>(x))
-        //     // {
-        //     // }
-        //     cout << x << endl;
-        // }
-
-
-        // for (auto &x : sudoku.get_connected_cells(0, 0, variables))
-        // {
-        //     cout << get<0>(x) << " " << get<1>(x) << endl;
-        // }
-
-        // vector<tuple<int, int>> test = sudoku.get_connected_cells(0, 0);
-
-        // for (int i; i < )
-
         return false;
     }
 };
 
 int main(int argc, char *argv[])
 {
-    // cout << "teasdafsst" << endl;
-    // array<std::array<int, 9>, 9> board[9][9];
     Sudoku sudoku;
     sudoku.load();
     
     Solver solver(sudoku);
     sudoku.print();
-    // cout << sudoku.get_col(2) << endl;
-    // for (int &i : sudoku.get_block(1, 0))
-    //     cout << i << endl;
-
-    // cout << sudoku.get_empty_cell_count() << endl;
-
-    // tuple<int, int> a = {1, 2};
-    // tuple<int, int> b = {1, 2};
-
-    // cout << (a == b) << endl;
-
-    // array<int, 9> a = {1, 2, 3, 4, 5, 6};
     
+    pos a;
+    cout << a.x << endl;
+
     solver.run();
-    solver.get_sudoku().print();
+    sudoku.print();
+
+
     return 0;
 }
