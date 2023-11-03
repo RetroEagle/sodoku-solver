@@ -24,9 +24,9 @@ class Solver:
         s = self.sudoku.size
         bs = int(math.sqrt(s))
         # row
-        row = [(vx, y) for vx in range(self.sudoku.size) if vx != x]
+        row = [(vx, y) for vx in range(s) if vx != x]
         # col
-        col = [(x, vy) for vy in range(self.sudoku.size) if vy != y]
+        col = [(x, vy) for vy in range(s) if vy != y]
         # block
         block = [(vx, vy) for vx in range(x//bs * bs, x//bs * bs + bs) for vy in range(y//bs * bs, y//bs * bs + bs) if (vx, vy) != (x, y)]
         return set(row + col + block) # converting to a set is an easy way of getting rid of duplicates
@@ -154,7 +154,7 @@ class AdvancedSolver(Solver):
                     self.sudoku.enter(x, y, val)
                     
                     changed = self.purge(x, y, val, domains, variables) or changed
-                    
+
         if len(variables) > 0:
             # take a guess by choosing a variable with the smalles possible domain to reduce guesses
             x, y = sorted(variables, key=lambda a : len(domains[a]))[0]

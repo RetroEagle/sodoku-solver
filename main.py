@@ -31,3 +31,5 @@ if __name__ == "__main__":
         print(f"AC3: {solver.cycles:8d} {solver.guesses:5d} \t SimpleSolver: {solver2.cycles:8d} {solver2.guesses:5d}")
     
     print(total1, total2)
+
+    print(s.export())
