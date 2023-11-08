@@ -155,7 +155,7 @@ class Sudoku:
         return new_sudoku
 
 
-def load_multiple_from_file(file = "test_sudokus.txt"):
+def load_multiple_from_file(file = "sudokus/test_sudokus.txt"):
     f = open(file)
     sudokus = [Sudoku(i[4:]) for i in f.read().split("Grid")[1:]]
     return sudokus
