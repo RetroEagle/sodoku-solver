@@ -230,22 +230,6 @@ public:
         vector<pos> variables = sudoku.get_empty_cells();
         map<pos, vector<int>> domains = sudoku.get_domains(variables);
 
-        // for (auto &o : variables)
-        // {
-        //     cout << o.x << " " << o.y << endl;
-        // }
-
-        // for (auto [a, b] : domains)
-        // {
-        //     cout << a.x << " " << a.y << " : ";
-
-        //     for (auto v : b)
-        //     {
-        //         cout << v << " ";
-        //     }
-        //     cout << endl;
-        // }
-
         bool changed = true;
         while (changed)
         {
@@ -262,7 +246,7 @@ public:
                 if ((output->second).size() <= 1)
                 {
                     if ((output->second).size() == 0)
-                        return false;
+                        return false; // contradiction
 
                     int val = (output->second)[0];
 
@@ -273,7 +257,12 @@ public:
                 }
             }
         }
-        return false;
+
+        // take a guess
+
+
+
+        return true;
     }
 };
 
