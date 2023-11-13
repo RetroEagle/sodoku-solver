@@ -299,7 +299,6 @@ public:
                 }
             }
             
-
             for (int &guess : choices)
             {
                 Sudoku* child_sudoku = new Sudoku(sudoku);
