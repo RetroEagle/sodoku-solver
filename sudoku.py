@@ -35,33 +35,6 @@ class Sudoku:
     def print_raw(self):
         print(self.board)
 
-    def print_marked(self, mx, my):
-        for y in range(9):
-            if not y % 3 and y > 0:
-                print(chr(8213) * 7 + "+" + chr(8213) * 7 + "+" + chr(8213) * 7)
-                
-            if y == my:
-                for x in range(9):
-                    if not x % 3 and x > 0:
-                        print(chr(9632) + chr(124), end="")
-                    
-                    if x == mx:
-                        print(" ", end=chr(9632))
-                    else:
-                        print((f"{(self.board[y][x]):2d}").replace(" ", chr(9632)) if self.board[y][x] > 0 else chr(9632) * 2, end="")   
-                print(chr(9632))
-
-            else:
-                for x in range(9):
-                    if not x % 3 and x > 0:
-                        print(" " + chr(124), end="")
-
-                    if x == mx:
-                        print((f"{(self.board[y][x]):2d}").replace(" ", chr(9608)) if self.board[y][x] > 1 else chr(9608) + " ", end="")
-                    else: 
-                        print((f"{(self.board[y][x]):2d}") if self.board[y][x] > 1 else "  ", end="")   
-                print()
-
     def enter(self, x, y, val): # enters value without checkig if it is a valid move 
         self.board[y][x] = val
 
@@ -101,6 +74,7 @@ class Sudoku:
     
     def is_correct(self):
         # this does not need to be efficient, just a very simple short way of checking
+        # works by grouping the data. If there are 9 groups then all values from 1-9 are present
         for i in range(self.size):
             if len(list(itertools.groupby(self.get_row(i)))) != self.size:
                 return False
@@ -109,7 +83,6 @@ class Sudoku:
             if len(list(itertools.groupby(self.get_block_list(i//3, i%3)))) != self.size:
                 return False
         return True
-
     
     def get_value(self, x, y):
         return self.board[y][x]
