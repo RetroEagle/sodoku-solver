@@ -1,4 +1,5 @@
 from sudoku import *
+from queue import PriorityQueue
 
 class Solver:
     def get_emtpy_cells(self, row):
@@ -35,7 +36,7 @@ class SimpleSolver:
     def __init__(self, sudoku: Sudoku):
         self.sudoku = sudoku
         self.guesses = 0
-        self.evalutaions = 0
+        self.evaluations = 0
 
     def run(self):
         size, block_size = self.sudoku.size, self.sudoku.block_size
@@ -50,14 +51,14 @@ class SimpleSolver:
                 # figure out which values are missing
                 missing_values = []
                 for i in range(1, size + 1):
-                    self.evalutaions += 1
+                    self.evaluations += 1
                     if not i in block:
                         missing_values.append(i)
 
                 # figure out coords of the open cells
                 open_cells = [] # list of cells in the block that dont have a value yet            
                 for i in range(size):
-                    self.evalutaions += 1
+                    self.evaluations += 1
                     if block[i] == 0:
                         open_cells.append(i)
 
@@ -70,7 +71,7 @@ class SimpleSolver:
                 for n in missing_values:
                     fits = [] # [(x, y)]
                     for x, y in open_cells:
-                        self.evalutaions += 1
+                        self.evaluations += 1
                         # if s.check_block # dont need it
                         if self.sudoku.check_row(y, n):
                             if self.sudoku.check_col(x, n):
@@ -104,7 +105,7 @@ class SimpleSolver:
                     output = child_solver.run()
 
                     self.guesses += child_solver.guesses
-                    self.evalutaions += child_solver.evalutaions
+                    self.evaluations += child_solver.evaluations
                     
                     if output:
                         changed = True
@@ -198,7 +199,7 @@ class ArcConsistencySolver(Solver):
             if self.reduce(a, b, domains):
                 if len(domains[a]) == 0: 
                     return False
-                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]).intersection(domains) if c != a]
+                worklist += [(c, a) for c in self.get_connected_cells(a[0], a[1]).intersection(domains) if c != b]
         
         solved = True
         
@@ -224,34 +225,60 @@ class ArcConsistencySolver(Solver):
                 domains[a].remove(va)
                 change = True
         return change
-                
-        
+                     
 class AdvancedAC3Solver(ArcConsistencySolver):
     def __init__(self, sudoku: Sudoku):
-        ArcConsistencySolver.__init__(self, sudoku)       
-        
+        ArcConsistencySolver.__init__(self, sudoku)
+
     def run(self):
         # setup stuff (either recieve all or create all)
-        variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)]) # set of tuples
+        variables = set([(x, y) for y in range(self.sudoku.size) for x in self.get_emtpy_cells(y)])  # set of tuples
         domains = dict([((x, y), self.get_possible_values(x, y)) for x, y in variables]) # dict to link each position to a set of values
-        worklist = [((x, y), (vx, vy)) for x, y in domains for vx, vy in self.get_connected_cells(x, y).intersection(domains)]  # list of constraints
+        contraints = [((x, y), (vx, vy)) for x, y in domains for vx, vy in self.get_connected_cells(x, y).intersection(domains)]  # list of constraints
+
+        queue = PriorityQueue()
         
+        # prioritize constraints where one of the variables has been filled
+        def finished_arcs(x, queue=None): 
+            return 0 if (len(domains[x[0]]) == 0 or len(domains[x[1]]) == 0) else 1
+        
+        def smallest_domain(x, queue=None):
+            return len(domains[x[0]]) + len(domains[x[1]])
+        
+        def fifo(x, qeue):
+            return -queue.qsize()
+        
+        def filo(x, qeue):
+            return queue.qsize()
+        
+        func = smallest_domain
+
+        for arc in contraints:
+            val = func(arc, queue)
+            queue.put((val, arc))
+
         # iterate over worklist
-        while len(worklist) > 0:
-            a, b = worklist.pop()
+        while queue.qsize() > 0:
+            _, (a, b) = queue.get() # (ord, arc)
 
             if self.reduce(a, b, domains):
-                if len(domains[a]) == 0: 
+                if len(domains[a]) == 0:
                     return False
-                worklist += [(c, a) for c in self.get_connected_cells(a[0],a[1]).intersection(domains) if c != a]
-            
-        
+                
+                # iterate over all connected variables and add them to the queue as a constraint
+                for variable in self.get_connected_cells(a[0], a[1]).intersection(domains):
+                    arc = (variable, a)
+                    if variable != b:
+                        val = func(arc, queue)
+                        queue.put((val, arc))
+
         # enter values into the sudoku
         for x, y in domains:
             # use backtracking, should the domain conatains more than one value
             if len(domains[(x, y)]) == 1:
                 self.sudoku.enter(x, y, domains[(x, y)].pop())
             else:
+                return False # TEMPORAY
                 for val in domains[(x, y)]:
                     self.guesses += 1
                     child = self.sudoku.clone()
@@ -261,8 +288,8 @@ class AdvancedAC3Solver(ArcConsistencySolver):
                         self.evaluations += child_solver.evaluations
                         self.guesses += child_solver.guesses
                         self.sudoku.board = child.board
-                        return True # this means a child found a solution
+                        return True  # this means a child found a solution
                     self.evaluations += child_solver.evaluations
                     self.guesses += child_solver.guesses
-                return False # if this gets reached somthing went REALLY wrong
-        return True # reaching this means AC3 found a solution on its own
+                return False  # if this gets reached somthing went REALLY wrong
+        return True  # reaching this means AC3 found a solution on its own

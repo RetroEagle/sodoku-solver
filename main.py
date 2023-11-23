@@ -6,8 +6,8 @@ if __name__ == "__main__":
     s = Sudoku(f.read())
     # s = Sudoku(size=16)
     s.print()
-    # solver = AdvancedAC3Solver(s)
     solver = AdvancedAC3Solver(s)
+#     solver = AC3PriorityQueue(s)
     output = solver.run()
     s.print()
     print("solved:\t\t", solver.sudoku.is_correct(),
